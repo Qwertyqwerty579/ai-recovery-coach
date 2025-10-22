@@ -8,11 +8,11 @@ RUN addgroup --system app && adduser --system --group appuser
 
 WORKDIR /app
 
-COPY backend/requirements.txt .
+COPY requirements.txt ./
 RUN python -m pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-COPY backend/. .
+COPY . .
 
 RUN chown -R appuser:app /app
 USER appuser
