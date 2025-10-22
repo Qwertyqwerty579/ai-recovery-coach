@@ -1,7 +1,7 @@
 databases:
   - name: recovery-coach-db
     plan: free
-    databaseName: recovery_coach_db 
+    databaseName: recovery_coach_db
     user: recovery_coach_user
     region: frankfurt
 
@@ -17,14 +17,14 @@ services:
           name: recovery-coach-db
           property: connectionString
       - key: OPENAI_API_KEY
-        sync: false 
+        sync: false
 
-  - type: static_site
+  - type: web
     name: ai-recovery-coach-frontend
-    plan: free
+    env: static
     rootDir: frontend
     buildCommand: npm install && npm run build
-    publishDir: frontend/dist
+    publishDir: dist
     routes:
       - type: rewrite
         source: /api/*
@@ -32,4 +32,3 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
-
