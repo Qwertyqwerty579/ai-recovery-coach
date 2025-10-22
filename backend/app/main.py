@@ -10,13 +10,14 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from openai import OpenAI
-
+from fastapi.middleware.cors import CORSMiddleware
 from .models import Base, Workout, WellnessRating
 
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
 
 client = None
 if OPENAI_API_KEY:
@@ -38,8 +39,18 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan, root_path="/api")
-
-origins = ["http://localhost:3000"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+origins = [
+    "https://ai-recovery-coach-frontend.onrender.com",
+    "https://www.airecoverycoachs.asia",
+    "https://airecoverycoachs.asia"
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
