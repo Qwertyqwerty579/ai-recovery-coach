@@ -9,7 +9,6 @@ services:
   - type: web
     name: ai-recovery-coach-backend
     runtime: docker
-    plan: free
     dockerfilePath: ./backend/Dockerfile
     buildContext: ./backend
     envVars:
