@@ -1,8 +1,9 @@
-atabases:
+databases:
   - name: recovery-coach-db
-    plan: free 
     databaseName: recovery_coach_db
     user: recovery_coach_user
+    plan: free
+    region: frankfurt 
 
 services:
   - type: web
