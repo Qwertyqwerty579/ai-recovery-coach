@@ -1,19 +1,19 @@
-databases:
-  - name: recovery-coach-db
-    databaseName: recovery_coach_db
-    user: recovery_coach_user
-    plan: free
-    region: frankfurt 
-
 services:
+  - type: psql
+    name: recovery-coach-db
+    region: frankfurt 
+    plan: free
+
   - type: web
     name: ai-recovery-coach-backend
     runtime: docker
     plan: free
+    startCommand: "gunicorn -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000"
     dockerfilePath: ./backend/Dockerfile
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
+        fromService:
+          type: psql
           name: recovery-coach-db
           property: connectionString
       - key: OPENAI_API_KEY
@@ -24,11 +24,11 @@ services:
     plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
-    publishDir: frontend/dist
+    publishDir: ./frontend/dist 
     routes:
       - type: rewrite
-        source: /api/*
-        destination: https://ai-recovery-coach-backend.onrender.com/api/*
+        source: /api/:path*
+        destination: https://ai-recovery-coach-backend.onrender.com/api/:path*
       - type: rewrite
         source: /*
         destination: /index.html
