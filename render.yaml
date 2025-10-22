@@ -1,0 +1,31 @@
+services:
+  - type: psql
+    name: recovery-coach-db
+    plan: free 
+  - type: web
+    name: ai-recovery-coach-backend
+    runtime: docker
+    plan: free 
+    dockerfilePath: ./backend/Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          type: psql
+          name: recovery-coach-db
+          property: connectionString 
+      - key: OPENAI_API_KEY
+        sync: false
+
+  - type: static
+    name: ai-recovery-coach-frontend
+    plan: free 
+    rootDir: frontend 
+    buildCommand: npm install && npm run build 
+    publishDir: frontend/dist 
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://ai-recovery-coach-backend.onrender.com/api/* 
+      - type: rewrite
+        source: /*
+        destination: /index.html 
