@@ -11,6 +11,7 @@ services:
     runtime: docker
     plan: free
     dockerfilePath: ./backend/Dockerfile
+    buildContext: ./backend
     envVars:
       - key: DATABASE_URL
         fromDatabase:
