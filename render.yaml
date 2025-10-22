@@ -10,6 +10,7 @@ services:
     name: ai-recovery-coach-backend
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
+    buildContext: .
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -17,6 +18,7 @@ services:
           property: connectionString
       - key: OPENAI_API_KEY
         sync: false
+
 
   - type: web
     name: ai-recovery-coach-frontend
