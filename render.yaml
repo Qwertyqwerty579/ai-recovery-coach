@@ -26,7 +26,7 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     routes:
-      - type: rewrite
+      - type: proxy
         source: /api/*
         destination: https://ai-recovery-coach-backend.onrender.com/api/*
       - type: rewrite
