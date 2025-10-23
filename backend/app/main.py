@@ -39,6 +39,11 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan, root_path="/api")
+origins = [
+    "https://ai-recovery-coach-frontend.onrender.com",
+    "https://www.airecoverycoachs.asia",
+    "https://airecoverycoachs.asia"
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -46,11 +51,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-origins = [
-    "https://ai-recovery-coach-frontend.onrender.com",
-    "https://www.airecoverycoachs.asia",
-    "https://airecoverycoachs.asia"
-]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
