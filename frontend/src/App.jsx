@@ -48,7 +48,7 @@ const WellnessTracker = ({ onRatingAdded, setError }) => {
         };
 
         try {
-            const response = await fetch(`${API_URL}/ratings`, {
+            const response = await fetch(`${API_URL}/api/ratings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(ratingData),
@@ -91,7 +91,7 @@ const Dashboard = () => {
 
     const fetchWorkouts = async () => {
         try {
-            const response = await fetch(`${API_URL}/workouts`);
+            const response = await fetch(`${API_URL}/api/workouts`);
             if (!response.ok) throw new Error('Could not upload workouts.');
             const data = await response.json();
             setWorkouts(data);
@@ -103,7 +103,7 @@ const Dashboard = () => {
     
     const fetchProgressData = async () => {
         try {
-            const response = await fetch(`${API_URL}/ratings`);
+            const response = await fetch(`${API_URL}/api/ratings`);
             if (!response.ok) throw new Error('Could not upload data for chart.');
             const data = await response.json();
             const formattedData = data.map(r => ({
@@ -136,7 +136,7 @@ const Dashboard = () => {
         };
 
         try {
-            const workoutResponse = await fetch(`${API_URL}/workouts`, {
+            const workoutResponse = await fetch(`${API_URL}/api/workouts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newWorkoutData),
@@ -148,7 +148,7 @@ const Dashboard = () => {
             setIntensityValue(5);
             
             setIsLoadingPlan(true);
-            const planResponse = await fetch(`${API_URL}/generate-plan`, {
+            const planResponse = await fetch(`${API_URL}/api/generate-plan`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newWorkoutData)
@@ -266,7 +266,7 @@ const AiChat = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch(`${API_URL}/chat`, {
+            const response = await fetch(`${API_URL}/api/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_message: input })
