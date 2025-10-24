@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+const API_URL = import.meta.env.VITE_API_URL;
 
 const Icon = ({ path, className = "w-6 h-6" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
@@ -46,7 +47,7 @@ const WellnessTracker = ({ onRatingAdded, setError }) => {
         };
 
         try {
-            const response = await fetch('/api/ratings', {
+            const response = await fetch(`${API_URL}/ratings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(ratingData),
@@ -89,7 +90,7 @@ const Dashboard = () => {
 
     const fetchWorkouts = async () => {
         try {
-            const response = await fetch('/api/workouts');
+            const response = await fetch(`${API_URL}/workouts`);
             if (!response.ok) throw new Error('Could not upload workouts.');
             const data = await response.json();
             setWorkouts(data);
@@ -101,7 +102,7 @@ const Dashboard = () => {
     
     const fetchProgressData = async () => {
         try {
-            const response = await fetch('/api/ratings');
+            const response = await fetch(`${API_URL}/ratings`);
             if (!response.ok) throw new Error('Could not upload data for chart.');
             const data = await response.json();
             const formattedData = data.map(r => ({
@@ -134,7 +135,7 @@ const Dashboard = () => {
         };
 
         try {
-            const workoutResponse = await fetch('/api/workouts', {
+            const workoutResponse = await fetch(`${API_URL}/workouts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newWorkoutData),
@@ -146,7 +147,7 @@ const Dashboard = () => {
             setIntensityValue(5);
             
             setIsLoadingPlan(true);
-            const planResponse = await fetch('/api/generate-plan', {
+            const planResponse = await fetch(`${API_URL}/generate-plan`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newWorkoutData)
@@ -264,7 +265,7 @@ const AiChat = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('/api/chat', {
+            const response = await fetch(`${API_URL}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_message: input })
