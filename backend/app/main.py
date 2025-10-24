@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
     create_db_and_tables()
     yield
 
-app = FastAPI(lifespan=lifespan, root_path="/api")
+app = FastAPI(lifespan=lifespan)
 origins = [
     "https://ai-recovery-coach-frontend.onrender.com",
     "https://www.airecoverycoachs.asia",
@@ -97,11 +97,11 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/")
+@app.get("/api/")
 def read_root():
     return {"message": "AI Recovery Coach API is running"}
 
-@app.post("/workouts", response_model=WorkoutResponse)
+@app.post("/api/workouts", response_model=WorkoutResponse)
 def create_workout(workout: WorkoutCreate, db: Session = Depends(get_db)):
     db_workout = Workout(**workout.dict())
     db.add(db_workout)
@@ -109,12 +109,12 @@ def create_workout(workout: WorkoutCreate, db: Session = Depends(get_db)):
     db.refresh(db_workout)
     return db_workout
 
-@app.get("/workouts", response_model=list[WorkoutResponse])
+@app.get("/api/workouts", response_model=list[WorkoutResponse])
 def read_workouts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     workouts = db.query(Workout).order_by(Workout.date.desc()).all()
     return workouts
 
-@app.post("/ratings", response_model=WellnessRatingResponse)
+@app.post("/api/ratings", response_model=WellnessRatingResponse)
 def create_or_update_wellness_rating(rating: WellnessRatingCreate, db: Session = Depends(get_db)):
     db_rating = db.query(WellnessRating).filter(WellnessRating.date == rating.date).first()
     if db_rating:
@@ -127,12 +127,12 @@ def create_or_update_wellness_rating(rating: WellnessRatingCreate, db: Session =
     db.refresh(db_rating)
     return db_rating
 
-@app.get("/ratings", response_model=list[WellnessRatingResponse])
+@app.get("/api/ratings", response_model=list[WellnessRatingResponse])
 def read_wellness_ratings(db: Session = Depends(get_db)):
     ratings = db.query(WellnessRating).order_by(WellnessRating.date).all()
     return ratings
 
-@app.post("/generate-plan", response_model=PlanResponse)
+@app.post("/api/generate-plan", response_model=PlanResponse)
 async def generate_recovery_plan(workout: WorkoutCreate):
     if not client:
         raise HTTPException(status_code=503, detail="OpenAI API key is not configured.")
@@ -183,7 +183,7 @@ async def generate_recovery_plan(workout: WorkoutCreate):
         print(f"Error calling OpenAI: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate plan from AI")
 
-@app.post("/chat")
+@app.post("/api/chat")
 async def chat_with_coach(message: ChatMessage):
     if not client:
         raise HTTPException(status_code=503, detail="OpenAI API key is not configured.")

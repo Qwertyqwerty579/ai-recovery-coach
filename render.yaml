@@ -10,7 +10,7 @@ services:
     name: ai-recovery-coach-backend
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    buildContext: .
     envVars:
       - key: DATABASE_URL
         fromDatabase:
