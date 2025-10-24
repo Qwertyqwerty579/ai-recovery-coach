@@ -27,8 +27,8 @@ services:
     staticPublishPath: dist
     routes:
       - type: rewrite
-        source: /api/*
-        destination: https://ai-recovery-coach-backend.onrender.com/api/*
+        source: /api/:path* 
+        destination: https://ai-recovery-coach-backend.onrender.com/api/:path*
       - type: rewrite
         source: /*
         destination: /index.html
