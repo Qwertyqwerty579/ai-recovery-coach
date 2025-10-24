@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const API_URL = import.meta.env.VITE_API_URL;
-
+const API_URL = 'https://ai-recovery-coach.onrender.com/' /*import.meta.env.VITE_API_URL*/;
 
 const Icon = ({ path, className = "w-6 h-6" }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
