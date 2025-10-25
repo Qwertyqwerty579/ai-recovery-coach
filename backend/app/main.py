@@ -1,6 +1,6 @@
 import os
 from datetime import date
-from typing import Optional
+from typing import Optional, List
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -10,14 +10,13 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from openai import OpenAI
-from fastapi.middleware.cors import CORSMiddleware
-from .models import Base, Workout, WellnessRating
+
+from .models import Base, Workout, WellnessRating, User
 
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
 
 client = None
 if OPENAI_API_KEY:
@@ -32,21 +31,28 @@ def create_db_and_tables():
     print("Creating database and tables...")
     Base.metadata.create_all(bind=engine)
     print("Database and tables created successfully.")
+    db = SessionLocal()
+    user = db.query(User).filter(User.id == 1).first()
+    if not user:
+        print("Creating dummy user with ID 1...")
+        dummy_user = User(id=1) 
+        db.add(dummy_user)
+        db.commit()
+    db.close()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
     yield
 
-app = FastAPI() #lifespan=lifespan
-origins = ["*"]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app = FastAPI(lifespan=lifespan) #
+
+origins = [
+    "https://ai-recovery-coach-frontend.onrender.com",
+    "https://www.airecoverycoachs.asia",
+    "https://airecoverycoachs.asia"
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -64,8 +70,9 @@ class WorkoutCreate(BaseModel):
 
 class WorkoutResponse(WorkoutCreate):
     id: int
+    owner_id: int 
     class Config:
-        orm_mode = True 
+        from_attributes = True
 
 class PlanResponse(BaseModel):
     title: str
@@ -83,8 +90,13 @@ class WellnessRatingCreate(BaseModel):
 
 class WellnessRatingResponse(WellnessRatingCreate):
     id: int
+    owner_id: int
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+async def get_current_user_id() -> int:
+    return 1
+
 
 def get_db():
     db = SessionLocal()
@@ -98,38 +110,58 @@ def read_root():
     return {"message": "AI Recovery Coach API is running"}
 
 @app.post("/api/workouts", response_model=WorkoutResponse)
-def create_workout(workout: WorkoutCreate, db: Session = Depends(get_db)):
-    db_workout = Workout(**workout.dict())
+def create_workout(
+    workout: WorkoutCreate,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id) 
+):
+    db_workout = Workout(**workout.dict(), owner_id=current_user_id)
     db.add(db_workout)
     db.commit()
     db.refresh(db_workout)
     return db_workout
 
-@app.get("/api/workouts", response_model=list[WorkoutResponse])
-def read_workouts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    workouts = db.query(Workout).order_by(Workout.date.desc()).all()
+@app.get("/api/workouts", response_model=List[WorkoutResponse])
+def read_workouts(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id) 
+):
+    workouts = db.query(Workout).filter(Workout.owner_id == current_user_id).order_by(Workout.date.desc()).offset(skip).limit(limit).all()
     return workouts
 
 @app.post("/api/ratings", response_model=WellnessRatingResponse)
-def create_or_update_wellness_rating(rating: WellnessRatingCreate, db: Session = Depends(get_db)):
-    db_rating = db.query(WellnessRating).filter(WellnessRating.date == rating.date).first()
+def create_or_update_wellness_rating(
+    rating: WellnessRatingCreate,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id) 
+):
+    db_rating = db.query(WellnessRating).filter(
+        WellnessRating.date == rating.date,
+        WellnessRating.owner_id == current_user_id
+    ).first()
+
     if db_rating:
         db_rating.pain_level = rating.pain_level
         db_rating.recovery_score = rating.recovery_score
     else:
-        db_rating = WellnessRating(**rating.dict())
+        db_rating = WellnessRating(**rating.dict(), owner_id=current_user_id)
         db.add(db_rating)
     db.commit()
     db.refresh(db_rating)
     return db_rating
 
-@app.get("/api/ratings", response_model=list[WellnessRatingResponse])
-def read_wellness_ratings(db: Session = Depends(get_db)):
-    ratings = db.query(WellnessRating).order_by(WellnessRating.date).all()
+@app.get("/api/ratings", response_model=List[WellnessRatingResponse]) 
+def read_wellness_ratings(
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
+):
+    ratings = db.query(WellnessRating).filter(WellnessRating.owner_id == current_user_id).order_by(WellnessRating.date).all()
     return ratings
 
 @app.post("/api/generate-plan", response_model=PlanResponse)
-async def generate_recovery_plan(workout: WorkoutCreate):
+async def generate_recovery_plan(workout: WorkoutCreate): 
     if not client:
         raise HTTPException(status_code=503, detail="OpenAI API key is not configured.")
     
@@ -180,7 +212,7 @@ async def generate_recovery_plan(workout: WorkoutCreate):
         raise HTTPException(status_code=500, detail="Failed to generate plan from AI")
 
 @app.post("/api/chat")
-async def chat_with_coach(message: ChatMessage):
+async def chat_with_coach(message: ChatMessage): 
     if not client:
         raise HTTPException(status_code=503, detail="OpenAI API key is not configured.")
 
