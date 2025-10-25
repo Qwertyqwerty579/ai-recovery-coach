@@ -15,6 +15,9 @@ RUN python -m pip install --upgrade pip && \
 COPY . .
 
 RUN chown -R appuser:app /app
+
+EXPOSE 8000
+
 USER appuser
 
 CMD ["gunicorn", "app.main:app", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
