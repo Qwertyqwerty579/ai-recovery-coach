@@ -113,7 +113,7 @@ def read_wellness_ratings(
     ).order_by(WellnessRating.date).all()
     return ratings
 
-@app.post("/api/generate-plan", response_model=PlanResponse)
+@app.post("/api/generate-plan", response_model=schemas.PlanResponse)
 async def generate_recovery_plan(
     workout: schemas.WorkoutCreate, 
     current_user: User = Depends(get_current_user) 
