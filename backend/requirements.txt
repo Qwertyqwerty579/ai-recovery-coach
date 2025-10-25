@@ -9,3 +9,6 @@ faiss-cpu
 sentence-transformers
 gunicorn
 torch --index-url https://download.pytorch.org/whl/cpu
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
