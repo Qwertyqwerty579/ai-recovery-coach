@@ -1,6 +1,5 @@
 databases:
   - name: recovery-coach-db
-    plan: free
     databaseName: recovery_coach_db
     user: recovery_coach_user
     region: frankfurt
