@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const API_URL = 'https://ai-recovery-coach.onrender.com' /*import.meta.env.VITE_API_URL*/;
+const API_URL = 'https://api.airecoverycoachs.asia'; /*import.meta.env.VITE_API_URL*/;
 
 const AuthContext = createContext(null);
 
