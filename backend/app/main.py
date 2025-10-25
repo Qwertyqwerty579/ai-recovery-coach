@@ -39,11 +39,7 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan)
-origins = [
-    "https://ai-recovery-coach-frontend.onrender.com",
-    "https://www.airecoverycoachs.asia",
-    "https://airecoverycoachs.asia"
-]
+origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
