@@ -9,7 +9,6 @@ from . import schemas
 from . import security
 
 router = APIRouter(
-    prefix="/api",
     tags=["Auth"]
 )
 

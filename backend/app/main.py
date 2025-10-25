@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan) 
-
+app.include_router(auth.router, prefix="/api")
 origins = [
     "https://ai-recovery-coach-frontend.onrender.com",
     "https://www.airecoverycoachs.asia",
