@@ -10,10 +10,11 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from openai import OpenAI
-from models import Base, Workout, WellnessRating, User
-import schemas
-import auth 
-from auth import get_current_user
+from .models import Base, Workout, WellnessRating, User
+from . import schemas
+from . import auth
+from .auth import get_current_user
+from .database import engine, get_db, SessionLocal
 
 load_dotenv()
 
@@ -25,9 +26,6 @@ if OPENAI_API_KEY:
     client = OpenAI(api_key=OPENAI_API_KEY)
 else:
     print("WARNING: OPENAI_API_KEY is not set. AI features will be disabled.")
-
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def create_db_and_tables():
     print("Creating database and tables...")
@@ -54,13 +52,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @app.get("/api/")

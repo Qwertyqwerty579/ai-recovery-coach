@@ -3,10 +3,10 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 
-from main import get_db 
-from models import User
-import schemas
-import security
+from .database import get_db 
+from .models import User
+from . import schemas
+from . import security
 
 router = APIRouter(
     prefix="/api",
