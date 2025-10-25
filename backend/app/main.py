@@ -1,7 +1,7 @@
 import os
 from datetime import date
 from typing import Optional, List
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
@@ -10,8 +10,10 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from openai import OpenAI
-
-from .models import Base, Workout, WellnessRating, User
+from models import Base, Workout, WellnessRating, User
+import schemas
+import auth 
+from auth import get_current_user
 
 load_dotenv()
 
@@ -31,14 +33,6 @@ def create_db_and_tables():
     print("Creating database and tables...")
     Base.metadata.create_all(bind=engine)
     print("Database and tables created successfully.")
-    db = SessionLocal()
-    user = db.query(User).filter(User.id == 1).first()
-    if not user:
-        print("Creating dummy user with ID 1...")
-        dummy_user = User(id=1) 
-        db.add(dummy_user)
-        db.commit()
-    db.close()
 
 
 @asynccontextmanager
@@ -46,7 +40,7 @@ async def lifespan(app: FastAPI):
     create_db_and_tables()
     yield
 
-app = FastAPI(lifespan=lifespan) #
+app = FastAPI(lifespan=lifespan) 
 
 origins = [
     "https://ai-recovery-coach-frontend.onrender.com",
@@ -61,43 +55,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class WorkoutCreate(BaseModel):
-    date: date
-    type: str
-    intensity: int
-    duration: int
-    equipment: Optional[str] = None
-
-class WorkoutResponse(WorkoutCreate):
-    id: int
-    owner_id: int 
-    class Config:
-        from_attributes = True
-
-class PlanResponse(BaseModel):
-    title: str
-    duration_minutes: int
-    exercises: list[str]
-    notes: str
-    
-class ChatMessage(BaseModel):
-    user_message: str
-
-class WellnessRatingCreate(BaseModel):
-    date: date
-    pain_level: int
-    recovery_score: int
-
-class WellnessRatingResponse(WellnessRatingCreate):
-    id: int
-    owner_id: int
-    class Config:
-        from_attributes = True
-
-async def get_current_user_id() -> int:
-    return 1
-
-
 def get_db():
     db = SessionLocal()
     try:
@@ -105,63 +62,71 @@ def get_db():
     finally:
         db.close()
 
+
 @app.get("/api/")
 def read_root():
     return {"message": "AI Recovery Coach API is running"}
 
-@app.post("/api/workouts", response_model=WorkoutResponse)
+@app.post("/api/workouts", response_model=schemas.WorkoutResponse) 
 def create_workout(
-    workout: WorkoutCreate,
+    workout: schemas.WorkoutCreate, 
     db: Session = Depends(get_db),
-    current_user_id: int = Depends(get_current_user_id) 
+    current_user: User = Depends(get_current_user) 
 ):
-    db_workout = Workout(**workout.dict(), owner_id=current_user_id)
+    db_workout = Workout(**workout.dict(), owner_id=current_user.id) 
     db.add(db_workout)
     db.commit()
     db.refresh(db_workout)
     return db_workout
 
-@app.get("/api/workouts", response_model=List[WorkoutResponse])
+@app.get("/api/workouts", response_model=List[schemas.WorkoutResponse]) 
 def read_workouts(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user_id: int = Depends(get_current_user_id) 
+    current_user: User = Depends(get_current_user) 
 ):
-    workouts = db.query(Workout).filter(Workout.owner_id == current_user_id).order_by(Workout.date.desc()).offset(skip).limit(limit).all()
+    workouts = db.query(Workout).filter(
+        Workout.owner_id == current_user.id
+    ).order_by(Workout.date.desc()).offset(skip).limit(limit).all()
     return workouts
 
-@app.post("/api/ratings", response_model=WellnessRatingResponse)
+@app.post("/api/ratings", response_model=schemas.WellnessRatingResponse) 
 def create_or_update_wellness_rating(
-    rating: WellnessRatingCreate,
+    rating: schemas.WellnessRatingCreate, 
     db: Session = Depends(get_db),
-    current_user_id: int = Depends(get_current_user_id) 
+    current_user: User = Depends(get_current_user) 
 ):
     db_rating = db.query(WellnessRating).filter(
         WellnessRating.date == rating.date,
-        WellnessRating.owner_id == current_user_id
+        WellnessRating.owner_id == current_user.id 
     ).first()
 
     if db_rating:
         db_rating.pain_level = rating.pain_level
         db_rating.recovery_score = rating.recovery_score
     else:
-        db_rating = WellnessRating(**rating.dict(), owner_id=current_user_id)
+        db_rating = WellnessRating(**rating.dict(), owner_id=current_user.id) 
         db.add(db_rating)
     db.commit()
-    db.refresh(db_rating)
+    db.refresh(db_blog)
     return db_rating
 
-@app.get("/api/ratings", response_model=List[WellnessRatingResponse]) 
+@app.get("/api/ratings", response_model=List[schemas.WellnessRatingResponse])
 def read_wellness_ratings(
     db: Session = Depends(get_db),
-    current_user_id: int = Depends(get_current_user_id)
+    current_user: User = Depends(get_current_user) 
 ):
-    ratings = db.query(WellnessRating).filter(WellnessRating.owner_id == current_user_id).order_by(WellnessRating.date).all()
+    ratings = db.query(WellnessRating).filter(
+        WellnessRating.owner_id == current_user.id 
+    ).order_by(WellnessRating.date).all()
     return ratings
 
 @app.post("/api/generate-plan", response_model=PlanResponse)
-async def generate_recovery_plan(workout: WorkoutCreate): 
+async def generate_recovery_plan(
+    workout: schemas.WorkoutCreate, 
+    current_user: User = Depends(get_current_user) 
+): 
     if not client:
         raise HTTPException(status_code=503, detail="OpenAI API key is not configured.")
     
@@ -206,13 +171,16 @@ async def generate_recovery_plan(workout: WorkoutCreate):
             ]
         )
         plan_data = response.choices[0].message.content
-        return PlanResponse.parse_raw(plan_data)
+        return schemas.PlanResponse.parse_raw(plan_data)
     except Exception as e:
         print(f"Error calling OpenAI: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate plan from AI")
 
 @app.post("/api/chat")
-async def chat_with_coach(message: ChatMessage): 
+async def chat_with_coach(
+    message: schemas.ChatMessage, 
+    current_user: User = Depends(get_current_user)
+): 
     if not client:
         raise HTTPException(status_code=503, detail="OpenAI API key is not configured.")
 
